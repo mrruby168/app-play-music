@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Trình phát nhạc chuyên nghiệp - Music Player Pro">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Music Pro">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>🎵 Music Player Pro</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: #21262d;
+  --accent: #58a6ff;
+  --accent-pink: #f778ba;
+  --accent-green: #3fb950;
+  --text-primary: #f0f6fc;
+  --text-secondary: #8b949e;
+  --border: #30363d;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; font-family: 'Segoe UI', -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; user-select: none; }
+
+.app { display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 1fr auto; height: 100%; }
+
+/* Sidebar */
+.sidebar { grid-row: 1 / 3; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.brand { padding: 24px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
+.brand-icon { width: 42px; height: 42px; background: linear-gradient(135deg, var(--accent), var(--accent-pink)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 15px rgba(88,166,255,0.3); }
+.brand-text { font-size: 20px; font-weight: 700; background: linear-gradient(90deg, var(--accent), var(--accent-pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.nav-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); padding: 20px 25px 12px; }
+.playlist-list { flex: 1; overflow-y: auto; padding: 0 15px 15px; }
+.playlist-item { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; cursor: pointer; transition: all 0.2s; margin-bottom: 6px; border: 1px solid transparent; }
+.playlist-item:hover { background: rgba(255,255,255,0.04); }
+.playlist-item.active { background: var(--bg-card); border-color: var(--border); box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 12px rgba(0,0,0,0.3); }
+.playlist-item.active .pl-name { color: var(--accent); }
+.pl-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.pl-icon.fav { background: linear-gradient(135deg, #ff6b6b, #ee5a5a); }
+.pl-icon.chill { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+.pl-icon.gym { background: linear-gradient(135deg, #f093fb, #f5576c); }
+.pl-icon.remix { background: linear-gradient(135deg, #667eea, #764ba2); }
+.pl-icon.other { background: linear-gradient(135deg, #ffecd2, #fcb69f); }
+.pl-info { flex: 1; min-width: 0; }
+.pl-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-count { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+.btn-3d { border: none; cursor: pointer; transition: all 0.15s; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-add-playlist { margin: 15px; padding: 14px; background: var(--bg-card); color: var(--accent); border-radius: 12px; box-shadow: 0 3px 0 #0d1117, 0 4px 10px rgba(0,0,0,0.25); }
+.btn-add-playlist:active { transform: translateY(2px); box-shadow: 0 1px 0 #0d1117; }
+
+/* Main */
+.main-content { display: flex; flex-direction: column; overflow: hidden; }
+.main-header { padding: 28px 35px; display: flex; align-items: center; justify-content: space-between; background: linear-gradient(180deg, var(--bg-secondary) 0%, transparent 100%); }
+.header-info h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+.header-info p { color: var(--text-secondary); font-size: 14px; }
+.btn-add-song { padding: 12px 24px; background: linear-gradient(135deg, var(--accent), #79c0ff); color: #000; font-weight: 700; border-radius: 25px; box-shadow: 0 4px 0 #3d8bd4, 0 6px 20px rgba(88,166,255,0.3); }
+.btn-add-song:active { transform: translateY(3px); box-shadow: 0 1px 0 #3d8bd4; }
+
+.song-container { flex: 1; overflow-y: auto; padding: 0 35px 130px; }
+.song-list-header { display: grid; grid-template-columns: 50px 1fr 100px 50px; gap: 15px; padding: 12px 15px; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); margin-bottom: 10px; position: sticky; top: 0; background: var(--bg-primary); z-index: 5; }
+.song-item { display: grid; grid-template-columns: 50px 1fr 100px 50px; gap: 15px; align-items: center; padding: 10px 15px; border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+.song-item:hover { background: var(--bg-card); }
+.song-item.playing { background: var(--bg-card); box-shadow: inset 3px 0 0 var(--accent); }
+.song-item.playing .song-title, .song-item.playing .song-num { color: var(--accent); }
+.song-num { font-size: 14px; color: var(--text-secondary); text-align: center; }
+.song-info { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.song-thumb { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+.song-meta { min-width: 0; }
+.song-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+.song-artist { font-size: 13px; color: var(--text-secondary); }
+.song-duration { font-size: 13px; color: var(--text-secondary); text-align: right; }
+.btn-delete { width: 36px; height: 36px; border-radius: 50%; background: transparent; color: var(--text-secondary); font-size: 16px; opacity: 0; transition: all 0.2s; }
+.song-item:hover .btn-delete { opacity: 1; }
+.btn-delete:hover { background: #f85149; color: white; }
+
+.empty-state { text-align: center; padding: 80px 20px; color: var(--text-secondary); }
+.empty-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+
+/* Player */
+.player-bar { grid-column: 2; background: var(--bg-secondary); border-top: 1px solid var(--border); padding: 16px 30px; display: flex; align-items: center; gap: 25px; }
+.now-playing { display: flex; align-items: center; gap: 16px; width: 280px; }
+.now-cover { width: 58px; height: 58px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-pink)); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+.now-cover.playing::after { content: ''; position: absolute; inset: -50%; background: conic-gradient(transparent, rgba(255,255,255,0.1), transparent); animation: rotate 3s linear infinite; }
+@keyframes rotate { to { transform: rotate(360deg); } }
+.now-meta { min-width: 0; flex: 1; }
+.now-title { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.now-artist { font-size: 13px; color: var(--text-secondary); }
+
+.player-center { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.controls { display: flex; align-items: center; gap: 18px; }
+.btn-ctrl { width: 44px; height: 44px; border-radius: 50%; background: var(--bg-card); color: var(--text-primary); font-size: 18px; box-shadow: 0 3px 0 #0d1117, 0 4px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04); }
+.btn-ctrl:hover { color: var(--accent); transform: translateY(-2px); }
+.btn-ctrl:active { transform: translateY(2px); box-shadow: 0 1px 0 #0d1117; }
+.btn-ctrl.active { color: var(--accent-green); }
+.btn-play { width: 56px; height: 56px; font-size: 22px; background: linear-gradient(135deg, var(--accent), #79c0ff); color: #000; box-shadow: 0 4px 0 #3d8bd4, 0 6px 15px rgba(88,166,255,0.4); }
+.btn-play:active { transform: translateY(3px); box-shadow: 0 1px 0 #3d8bd4; }
+
+.progress-row { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 550px; }
+.time { font-size: 12px; color: var(--text-secondary); min-width: 40px; }
+.progress-track { flex: 1; height: 6px; background: var(--bg-card); border-radius: 10px; cursor: pointer; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
+.progress-track:hover { height: 8px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-pink)); border-radius: 10px; width: 0%; transition: width 0.1s linear; }
+
+.player-right { width: 150px; display: flex; align-items: center; gap: 10px; }
+.vol-icon { font-size: 18px; cursor: pointer; }
+.vol-track { flex: 1; height: 5px; background: var(--bg-card); border-radius: 5px; cursor: pointer; }
+.vol-fill { height: 100%; background: var(--text-secondary); border-radius: 5px; width: 70%; }
+
+/* Modal */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 30px; width: 90%; max-width: 420px; }
+.modal h2 { text-align: center; margin-bottom: 25px; font-size: 22px; }
+.modal-input { width: 100%; padding: 14px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); color: var(--text-primary); font-size: 15px; margin-bottom: 20px; }
+.modal-input:focus { border-color: var(--accent); outline: none; }
+.icon-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 25px; }
+.icon-opt { height: 48px; border-radius: 10px; border: 2px solid transparent; background: var(--bg-card); font-size: 22px; cursor: pointer; transition: all 0.15s; }
+.icon-opt:hover { transform: scale(1.1); }
+.icon-opt.selected { border-color: var(--accent); background: rgba(88,166,255,0.1); }
+.modal-btns { display: flex; gap: 12px; }
+.modal-btn { flex: 1; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 15px; }
+.modal-btn.cancel { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.modal-btn.confirm { background: linear-gradient(135deg, var(--accent), #79c0ff); color: #000; box-shadow: 0 3px 0 #3d8bd4; }
+.modal-btn.confirm:active { transform: translateY(2px); box-shadow: none; }
+
+/* Install Banner */
+.install-banner { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: var(--bg-card); border: 1px solid var(--border); padding: 15px 25px; border-radius: 15px; display: none; align-items: center; gap: 15px; z-index: 500; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.install-banner.show { display: flex; }
+.install-banner p { font-size: 14px; }
+.install-banner button { padding: 10px 20px; border-radius: 8px; font-weight: 600; }
+.btn-install { background: var(--accent); color: #000; border: none; }
+.btn-dismiss { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+
+/* Loading */
+.loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 2000; flex-direction: column; gap: 20px; }
+.loading-overlay.show { display: flex; }
+.spinner { width: 50px; height: 50px; border: 4px solid var(--bg-card); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-card); border-radius: 10px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { position: fixed; left: -300px; top: 0; bottom: 0; width: 280px; z-index: 100; transition: left 0.3s; }
+  .sidebar.open { left: 0; box-shadow: 10px 0 40px rgba(0,0,0,0.5); }
+  .menu-toggle { display: flex !important; }
+  .player-bar { padding: 12px 15px; gap: 15px; }
+  .player-right { display: none; }
+  .now-playing { width: auto; flex: 0 0 auto; }
+  .now-meta { display: none; }
+  .main-header { padding: 20px; }
+  .song-container { padding: 0 15px 130px; }
+  .header-info h1 { font-size: 22px; }
+}
+@media (min-width: 901px) { .menu-toggle { display: none !important; } }
+
+input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🎵</div>
+      <span class="brand-text">Music Pro</span>
+    </div>
+    <div class="nav-title">Thư viện của bạn</div>
+    <div class="playlist-list" id="playlists"></div>
+    <button class="btn-3d btn-add-playlist" onclick="openModal()">➕ Tạo danh sách mới</button>
+  </aside>
+
+  <main class="main-content">
+    <header class="main-header">
+      <div style="display:flex;align-items:center;gap:15px;">
+        <button class="btn-3d btn-ctrl menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="header-info">
+          <h1 id="playlistTitle">Yêu thích</h1>
+          <p id="playlistCount">0 bài hát</p>
+        </div>
+      </div>
+      <button class="btn-3d btn-add-song" onclick="document.getElementById('fileInput').click()">➕ Thêm nhạc</button>
+    </header>
+    <div class="song-container">
+      <div class="song-list-header">
+        <span>#</span><span>Tiêu đề</span><span style="text-align:right">Thời lượng</span><span></span>
+      </div>
+      <div id="songList"></div>
+    </div>
+  </main>
+
+  <div class="player-bar">
+    <div class="now-playing">
+      <div class="now-cover" id="nowCover">🎵</div>
+      <div class="now-meta">
+        <div class="now-title" id="nowTitle">Chưa phát bài nào</div>
+        <div class="now-artist" id="nowArtist">---</div>
+      </div>
+    </div>
+    <div class="player-center">
+      <div class="controls">
+        <button class="btn-3d btn-ctrl" id="btnShuffle" onclick="toggleShuffle()" title="Phát ngẫu nhiên">🔀</button>
+        <button class="btn-3d btn-ctrl" onclick="playPrev()" title="Bài trước">⏮️</button>
+        <button class="btn-3d btn-ctrl btn-play" id="btnPlay" onclick="togglePlay()">▶️</button>
+        <button class="btn-3d btn-ctrl" onclick="playNext()" title="Bài tiếp">⏭️</button>
+        <button class="btn-3d btn-ctrl" id="btnRepeat" onclick="toggleRepeat()" title="Lặp lại">🔁</button>
+      </div>
+      <div class="progress-row">
+        <span class="time" id="timeCurrent">0:00</span>
+        <div class="progress-track" onclick="seekTo(event)">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="time" id="timeTotal">0:00</span>
+      </div>
+    </div>
+    <div class="player-right">
+      <span class="vol-icon" onclick="toggleMute()">🔊</span>
+      <div class="vol-track" onclick="setVolume(event)">
+        <div class="vol-fill" id="volFill"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="install-banner" id="installBanner">
+  <span style="font-size:28px">📲</span>
+  <p>Cài đặt ứng dụng để trải nghiệm tốt hơn!</p>
+  <button class="btn-3d btn-install" onclick="installApp()">Cài đặt</button>
+  <button class="btn-3d btn-dismiss" onclick="dismissInstall()">Để sau</button>
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2>✨ Tạo danh sách phát mới</h2>
+    <input type="text" class="modal-input" id="inputName" placeholder="Nhập tên danh sách...">
+    <div class="icon-picker" id="iconPicker"></div>
+    <div class="modal-btns">
+      <button class="btn-3d modal-btn cancel" onclick="closeModal()">Hủy</button>
+      <button class="btn-3d modal-btn confirm" onclick="createPlaylist()">Tạo mới</button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div id="loadingText">Đang xử lý...</div>
+</div>
+
+<input type="file" id="fileInput" accept="audio/*" multiple onchange="addSongs(event)">
+<audio id="audio"></audio>
+
+<script>
+// ===== PWA Install =====
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      document.getElementById('installBanner').classList.remove('show');
+    });
+  }
+}
+
+function dismissInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== IndexedDB =====
+const DB_NAME = 'MusicProDB';
+const DB_VERSION = 1;
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => { db = req.result; resolve(db); };
+    req.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains('songs')) database.createObjectStore('songs', { keyPath: 'id' });
+      if (!database.objectStoreNames.contains('state')) database.createObjectStore('state', { keyPath: 'key' });
+    };
+  });
+}
+
+const dbPut = (store, data) => new Promise((res, rej) => {
+  const tx = db.transaction(store, 'readwrite');
+  tx.objectStore(store).put(data);
+  tx.oncomplete = res;
+  tx.onerror = () => rej(tx.error);
+});
+
+const dbGet = (store, key) => new Promise((res, rej) => {
+  const tx = db.transaction(store, 'readonly');
+  const req = tx.objectStore(store).get(key);
+  req.onsuccess = () => res(req.result);
+  req.onerror = () => rej(req.error);
+});
+
+const dbDelete = (store, key) => new Promise((res, rej) => {
+  const tx = db.transaction(store, 'readwrite');
+  tx.objectStore(store).delete(key);
+  tx.oncomplete = res;
+  tx.onerror = () => rej(tx.error);
+});
+
+const dbGetAll = (store) => new Promise((res, rej) => {
+  const tx = db.transaction(store, 'readonly');
+  const req = tx.objectStore(store).getAll();
+  req.onsuccess = () => res(req.result);
+  req.onerror = () => rej(req.error);
+});
+
+const fileToBase64 = (file) => new Promise((res, rej) => {
+  const r = new FileReader();
+  r.onload = () => res(r.result);
+  r.onerror = rej;
+  r.readAsDataURL(file);
+});
+
+// ===== Data =====
+const DEFAULT_PLAYLISTS = [
+  { id: 'fav', name: 'Yêu thích', icon: '❤️', color: 'fav', songs: [] },
+  { id: 'chill', name: 'Thư giãn', icon: '☕', color: 'chill', songs: [] },
+  { id: 'gym', name: 'Động lực GYM', icon: '💪', color: 'gym', songs: [] },
+  { id: 'remix', name: 'Remix', icon: '🎧', color: 'remix', songs: [] },
+  { id: 'other', name: 'Khác', icon: '📁', color: 'other', songs: [] }
+];
+
+const ICONS = ['❤️', '☕', '💪', '🎧', '📁', '🎵', '🔥', '🌙', '🎸', '🎹', '💿', '🎤', '⭐', '🚀', '🌈'];
+const THUMBS = ['linear-gradient(135deg,#ff6b6b,#ee5a5a)','linear-gradient(135deg,#4ecdc4,#44a08d)','linear-gradient(135deg,#f093fb,#f5576c)','linear-gradient(135deg,#667eea,#764ba2)','linear-gradient(135deg,#ffecd2,#fcb69f)','linear-gradient(135deg,#a8edea,#fed6e3)','linear-gradient(135deg,#89f7fe,#66a6ff)'];
+
+let state = { playlists: [], activeId: null, currentIdx: -1, currentSongId: null, playing: false, shuffle: false, repeat: 0, volume: 0.7, pickedIcon: '🎵' };
+const audio = document.getElementById('audio');
+
+// ===== Init =====
+async function init() {
+  showLoading('Đang khởi động...');
+  try {
+    await openDB();
+    await loadState();
+    if (!state.playlists.length) {
+      state.playlists = JSON.parse(JSON.stringify(DEFAULT_PLAYLISTS));
+      state.activeId = state.playlists[0].id;
+    }
+    if (!state.activeId) state.activeId = state.playlists[0]?.id;
+    
+    const songs = await dbGetAll('songs');
+    songs.forEach(song => {
+      const pl = state.playlists.find(p => p.id === song.playlistId);
+      if (pl && !pl.songs.find(s => s.id === song.id)) {
+        pl.songs.push({ id: song.id, title: song.title, artist: song.artist, duration: song.duration });
+      }
+    });
+    
+    audio.volume = state.volume;
+    document.getElementById('volFill').style.width = state.volume * 100 + '%';
+    render();
+    updateControls();
+  } catch(e) { console.error(e); }
+  hideLoading();
+}
+
+async function saveState() {
+  const data = {
+    key: 'appState',
+    playlists: state.playlists.map(p => ({ ...p, songs: p.songs.map(s => ({ id: s.id, title: s.title, artist: s.artist, duration: s.duration })) })),
+    activeId: state.activeId,
+    shuffle: state.shuffle,
+    repeat: state.repeat,
+    volume: state.volume
+  };
+  try { await dbPut('state', data); } catch(e) {}
+}
+
+async function loadState() {
+  try {
+    const data = await dbGet('state', 'appState');
+    if (data) {
+      state.playlists = data.playlists || [];
+      state.activeId = data.activeId;
+      state.shuffle = data.shuffle || false;
+      state.repeat = data.repeat || 0;
+      state.volume = data.volume ?? 0.7;
+    }
+  } catch(e) {}
+}
+
+window.addEventListener('beforeunload', () => saveState());
+
+function showLoading(t = 'Đang xử lý...') { document.getElementById('loadingText').textContent = t; document.getElementById('loading').classList.add('show'); }
+function hideLoading() { document.getElementById('loading').classList.remove('show'); }
+
+// ===== Render =====
+function render() { renderPlaylists(); renderSongs(); }
+
+function renderPlaylists() {
+  document.getElementById('playlists').innerHTML = state.playlists.map(p => `
+    <div class="playlist-item ${p.id === state.activeId ? 'active' : ''}" onclick="selectPlaylist('${p.id}')">
+      <div class="pl-icon ${p.color || ''}">${p.icon}</div>
+      <div class="pl-info"><div class="pl-name">${p.name}</div><div class="pl-count">${p.songs.length} bài hát</div></div>
+    </div>`).join('');
+}
+
+function renderSongs() {
+  const pl = getActive();
+  document.getElementById('playlistTitle').textContent = pl.name;
+  document.getElementById('playlistCount').textContent = pl.songs.length + ' bài hát';
+  const el = document.getElementById('songList');
+  if (!pl.songs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🎵</div><p>Chưa có bài hát nào<br>Nhấn "Thêm nhạc" để bắt đầu</p></div>`;
+    return;
+  }
+  el.innerHTML = pl.songs.map((s, i) => `
+    <div class="song-item ${s.id === state.currentSongId ? 'playing' : ''}" onclick="play('${s.id}')">
+      <span class="song-num">${s.id === state.currentSongId && state.playing ? '▶' : i + 1}</span>
+      <div class="song-info">
+        <div class="song-thumb" style="background:${THUMBS[i % THUMBS.length]}">${pl.icon}</div>
+        <div class="song-meta"><div class="song-title">${s.title}</div><div class="song-artist">${s.artist}</div></div>
+      </div>
+      <span class="song-duration">${s.duration ? formatTime(s.duration) : '--:--'}</span>
+      <button class="btn-3d btn-delete" onclick="event.stopPropagation();deleteSong('${s.id}')">🗑️</button>
+    </div>`).join('');
+}
+
+function getActive() { return state.playlists.find(p => p.id === state.activeId) || state.playlists[0]; }
+function selectPlaylist(id) { state.activeId = id; render(); closeSidebar(); }
+
+// ===== Songs =====
+async function addSongs(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  showLoading(`Đang thêm 0/${files.length} bài...`);
+  const pl = getActive();
+  for (let i = 0; i < files.length; i++) {
+    document.getElementById('loadingText').textContent = `Đang thêm ${i + 1}/${files.length} bài...`;
+    try {
+      const base64 = await fileToBase64(files[i]);
+      const songId = 'song_' + Date.now() + '_' + i;
+      await dbPut('songs', { id: songId, playlistId: pl.id, title: files[i].name.replace(/\.[^/.]+$/, ''), artist: 'Không rõ', data: base64, duration: 0 });
+      pl.songs.push({ id: songId, title: files[i].name.replace(/\.[^/.]+$/, ''), artist: 'Không rõ', duration: 0 });
+    } catch(err) { console.error(err); }
+  }
+  e.target.value = '';
+  await saveState();
+  render();
+  hideLoading();
+}
+
+async function deleteSong(songId) {
+  const pl = getActive();
+  if (songId === state.currentSongId) { audio.pause(); audio.src = ''; state.playing = false; state.currentSongId = null; state.currentIdx = -1; updatePlayBtn(); }
+  const idx = pl.songs.findIndex(s => s.id === songId);
+  if (idx > -1) { pl.songs.splice(idx, 1); try { await dbDelete('songs', songId); } catch(e) {} await saveState(); render(); }
+}
+
+// ===== Player =====
+async function play(songId) {
+  const pl = getActive();
+  const idx = pl.songs.findIndex(s => s.id === songId);
+  const song = pl.songs[idx];
+  if (!song) return;
+  showLoading('Đang tải...');
+  try {
+    const songData = await dbGet('songs', songId);
+    if (!songData?.data) { hideLoading(); return; }
+    state.currentIdx = idx;
+    state.currentSongId = songId;
+    audio.src = songData.data;
+    await audio.play();
+    state.playing = true;
+    updateNowPlaying(song, pl);
+    updatePlayBtn();
+    render();
+  } catch(e) { console.error(e); }
+  hideLoading();
+}
+
+function togglePlay() {
+  if (!state.currentSongId) { const pl = getActive(); if (pl.songs.length) play(pl.songs[0].id); return; }
+  if (audio.paused) { audio.play(); state.playing = true; } else { audio.pause(); state.playing = false; }
+  updatePlayBtn();
+}
+
+function playNext() { const pl = getActive(); if (!pl.songs.length) return; let n = state.shuffle ? Math.floor(Math.random() * pl.songs.length) : state.currentIdx + 1; if (n >= pl.songs.length) n = 0; play(pl.songs[n].id); }
+function playPrev() { const pl = getActive(); if (!pl.songs.length) return; if (audio.currentTime > 3) { audio.currentTime = 0; return; } let p = state.currentIdx - 1; if (p < 0) p = pl.songs.length - 1; play(pl.songs[p].id); }
+function toggleShuffle() { state.shuffle = !state.shuffle; updateControls(); saveState(); }
+function toggleRepeat() { state.repeat = (state.repeat + 1) % 3; updateControls(); saveState(); }
+function seekTo(e) { const r = e.currentTarget.getBoundingClientRect(); if (audio.duration) audio.currentTime = ((e.clientX - r.left) / r.width) * audio.duration; }
+function setVolume(e) { const r = e.currentTarget.getBoundingClientRect(); state.volume = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); audio.volume = state.volume; document.getElementById('volFill').style.width = state.volume * 100 + '%'; saveState(); }
+function toggleMute() { audio.muted = !audio.muted; document.querySelector('.vol-icon').textContent = audio.muted ? '🔇' : '🔊'; }
+
+audio.ontimeupdate = () => { document.getElementById('timeCurrent').textContent = formatTime(audio.currentTime); document.getElementById('progressFill').style.width = (audio.currentTime / (audio.duration || 1)) * 100 + '%'; };
+audio.onloadedmetadata = async () => { document.getElementById('timeTotal').textContent = formatTime(audio.duration); const pl = getActive(); const s = pl.songs.find(x => x.id === state.currentSongId); if (s) { s.duration = audio.duration; try { const d = await dbGet('songs', state.currentSongId); if (d) { d.duration = audio.duration; await dbPut('songs', d); } } catch(e) {} render(); } };
+audio.onended = () => { if (state.repeat === 2) { audio.currentTime = 0; audio.play(); } else if (state.repeat === 1 || state.currentIdx < getActive().songs.length - 1) playNext(); else { state.playing = false; updatePlayBtn(); } };
+
+function updateNowPlaying(s, p) { document.getElementById('nowTitle').textContent = s.title; document.getElementById('nowArtist').textContent = s.artist; document.getElementById('nowCover').textContent = p.icon; document.getElementById('nowCover').classList.toggle('playing', state.playing); }
+function updatePlayBtn() { document.getElementById('btnPlay').textContent = state.playing ? '⏸️' : '▶️'; document.getElementById('nowCover').classList.toggle('playing', state.playing); }
+function updateControls() { document.getElementById('btnShuffle').classList.toggle('active', state.shuffle); document.getElementById('btnRepeat').classList.toggle('active', state.repeat > 0); document.getElementById('btnRepeat').textContent = state.repeat === 2 ? '🔂' : '🔁'; }
+function formatTime(s) { if (!s || isNaN(s)) return '0:00'; return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0'); }
+
+// ===== Modal =====
+function openModal() { state.pickedIcon = ICONS[0]; renderIcons(); document.getElementById('inputName').value = ''; document.getElementById('modal').classList.add('show'); setTimeout(() => document.getElementById('inputName').focus(), 100); }
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+function renderIcons() { document.getElementById('iconPicker').innerHTML = ICONS.map(ic => `<button class="btn-3d icon-opt ${ic === state.pickedIcon ? 'selected' : ''}" onclick="pickIcon('${ic}')">${ic}</button>`).join(''); }
+window.pickIcon = ic => { state.pickedIcon = ic; renderIcons(); };
+async function createPlaylist() { const n = document.getElementById('inputName').value.trim(); if (!n) return; state.playlists.push({ id: 'pl_' + Date.now(), name: n, icon: state.pickedIcon, color: '', songs: [] }); state.activeId = state.playlists[state.playlists.length - 1].id; await saveState(); render(); closeModal(); }
+document.getElementById('inputName').onkeydown = e => { if (e.key === 'Enter') createPlaylist(); };
+document.getElementById('modal').onclick = e => { if (e.target.id === 'modal') closeModal(); };
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+
+init();
+</script>
+</body>
+</html>
